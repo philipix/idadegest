@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculadora de Idade Corrigida do Bebê</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      background-color: #f9f9f9;
+    }
+    label, input {
+      display: block;
+      margin-bottom: 10px;
+    }
+    input[type="date"] {
+      padding: 5px;
+      width: 100%;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 15px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .resultado {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      background-color: #e6f7ff;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Calculadora de Idade Corrigida do Bebê Prematuro</h2>
+
+  <label for="dataNascimento">Data de nascimento do bebê:</label>
+  <input type="date" id="dataNascimento">
+
+  <label for="dataPrevista">Data prevista do parto:</label>
+  <input type="date" id="dataPrevista">
+
+  <button onclick="calcularIdade()">Calcular Idades</button>
+
+  <div id="resultado" class="resultado" style="display:none;"></div>
+
+  <script>
+    function setCookie(nome, valor, dias) {
+      const data = new Date();
+      data.setTime(data.getTime() + (dias * 24 * 60 * 60 * 1000));
+      const expires = "expires=" + data.toUTCString();
+      document.cookie = nome + "=" + valor + ";" + expires + ";path=/";
+    }
+
+    function getCookie(nome) {
+      const nomeBusca = nome + "=";
+      const cookies = decodeURIComponent(document.cookie).split(';');
+      for (let c of cookies) {
+        while (c.charAt(0) === ' ') c = c.substring(1);
+        if (c.indexOf(nomeBusca) === 0) return c.substring(nomeBusca.length, c.length);
+      }
+      return "";
+    }
+
+    window.onload = function() {
+      const dataNascimento = getCookie("dataNascimento");
+      const dataPrevista = getCookie("dataPrevista");
+
+      if (dataNascimento) document.getElementById("dataNascimento").value = dataNascimento;
+      if (dataPrevista) document.getElementById("dataPrevista").value = dataPrevista;
+
+      if (dataNascimento && dataPrevista) {
+        calcularIdade();
+      }
+    }
+
+    function calcularIdade() {
+      const nascimento = document.getElementById('dataNascimento').value;
+      const prevista = document.getElementById('dataPrevista').value;
+      const resultado = document.getElementById('resultado');
+
+      if (!nascimento || !prevista) {
+        alert('Por favor, preencha ambas as datas.');
+        return;
+      }
+
+      const dataNascimento = new Date(nascimento);
+      const dataPrevista = new Date(prevista);
+      const hoje = new Date();
+
+      if (dataNascimento > dataPrevista) {
+        alert('A data de nascimento não pode ser posterior à data prevista do parto.');
+        return;
+      }
+
+      setCookie("dataNascimento", nascimento, 365);
+      setCookie("dataPrevista", prevista, 365);
+
+      function calcularDiferenca(dataInicial, dataFinal) {
+        let anos = dataFinal.getFullYear() - dataInicial.getFullYear();
+        let meses = dataFinal.getMonth() - dataInicial.getMonth();
+        let dias = dataFinal.getDate() - dataInicial.getDate();
+
+        if (dias < 0) {
+          meses--;
+          dias += new Date(dataFinal.getFullYear(), dataFinal.getMonth(), 0).getDate();
+        }
+
+        if (meses < 0) {
+          anos--;
+          meses += 12;
+        }
+
+        return { anos, meses, dias };
+      }
+
+      // Idade real
+      const idadeReal = calcularDiferenca(dataNascimento, hoje);
+
+      // Idade corrigida ou idade gestacional corrigida
+      let textoEspecial = "";
+      let idadeEspecial = {};
+
+      if (hoje < dataPrevista) {
+        let idadeGestCorrDias = 280 - ((dataPrevista - hoje) / (1000 * 60 * 60 * 24));
+        let idadeGestCorrSemanas = Math.floor(idadeGestCorrDias / 7);
+        let idadeGestCorrSemanasedias = Math.floor(idadeGestCorrDias % 7);
+        textoEspecial = `<strong>Idade Gestacional Corrigida:</strong> ${idadeGestCorrSemanas} semanas e ${idadeGestCorrSemanasedias} dias.`;
+      } else {
+        idadeEspecial = calcularDiferenca(dataPrevista, hoje);
+        textoEspecial = `<strong>Idade Corrigida:</strong> ${idadeEspecial.anos} anos, ${idadeEspecial.meses} meses e ${idadeEspecial.dias} dias.`;
+      }
+
+      // Idade gestacional ao nascer
+      const diasDiferenca = Math.floor((dataPrevista - dataNascimento) / (1000 * 60 * 60 * 24));
+      const semanasGestacionais = 40 - Math.floor(diasDiferenca / 7);
+      const diasGestacionais = 40 * 7 - diasDiferenca;
+      const semanas = Math.floor(diasGestacionais / 7);
+      const dias = diasGestacionais % 7;
+
+      resultado.style.display = 'block';
+      resultado.innerHTML = `
+        <strong>Idade Real:</strong> ${idadeReal.anos} anos, ${idadeReal.meses} meses e ${idadeReal.dias} dias.<br>
+        ${textoEspecial}<br>
+        <strong>Idade Gestacional ao Nascer:</strong> ${semanas} semanas e ${dias} dias.
+      `;
+    }
+  </script>
+
+</body>
+</html>
+
